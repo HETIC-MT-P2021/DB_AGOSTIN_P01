@@ -13,6 +13,7 @@ func addIndexRoutes(rg *gin.RouterGroup) {
 	index.GET("/", controllers.IndexAction)
 
 	//routes for customers
-	customers.GET("/", controllers.CustomerDetailsAction)
+	customers.GET("/", controllers.AllCustomerAction)
+	customers.GET("/:id/orders", controllers.OrderByCustomer)
 
 }

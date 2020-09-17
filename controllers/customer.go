@@ -4,15 +4,17 @@ import (
 	"github.com/gin-gonic/gin"
 	"goevent/database"
 	"goevent/database/Models"
-	"log"
 	"net/http"
 )
 
-func CustomerDetailsAction(c *gin.Context) {
+func AllCustomerAction(c *gin.Context) {
 	repository := Models.Repository{Conn: database.DbConn}
-	customers, _ := repository.GetUser()
+	customers, _ := repository.GetAllCustomers()
+	c.JSON(http.StatusOK, customers)
+}
 
-	log.Println(customers)
-
+func OrderByCustomer(c *gin.Context) {
+	repository := Models.Repository{Conn: database.DbConn}
+	customers, _ := repository.GetOrderByCustomer()
 	c.JSON(http.StatusOK, customers)
 }
