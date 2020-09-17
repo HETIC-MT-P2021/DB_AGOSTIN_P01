@@ -5,6 +5,7 @@ import (
 	"goevent/database"
 	"goevent/database/Models"
 	"net/http"
+	"strconv"
 )
 
 func AllCustomerAction(c *gin.Context) {
@@ -13,8 +14,16 @@ func AllCustomerAction(c *gin.Context) {
 	c.JSON(http.StatusOK, customers)
 }
 
-func OrderByCustomer(c *gin.Context) {
+func CustomerAction(c *gin.Context) {
 	repository := Models.Repository{Conn: database.DbConn}
-	customers, _ := repository.GetOrderByCustomer()
-	c.JSON(http.StatusOK, customers)
+	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+	customer, _ := repository.GetCustomer(id)
+	c.JSON(http.StatusOK, customer)
 }
+
+/*func OrderByCustomer(c *gin.Context) {
+	repository := Models.Repository{Conn: database.DbConn}
+	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+	customerOrder, _ := repository.GetOrderByCustomer(id)
+	c.JSON(http.StatusOK, "order")
+}*/

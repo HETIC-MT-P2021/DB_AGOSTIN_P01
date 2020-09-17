@@ -3,6 +3,7 @@ package Models
 import (
 	"database/sql"
 	"log"
+	"time"
 )
 
 // Repository struct for db connection
@@ -24,6 +25,16 @@ type Customer struct {
 	Country                string  `json:"country"`
 	SalesRepEmployeeNumber int64   `json:"salesRepEmployeeNumber"`
 	CreditLimit            float64 `json:"creditLimit"`
+}
+
+type Order struct {
+	OrderNumber    int       `json:"orderNumber"`
+	OrderDate      time.Time `json:"orderDate"`
+	RequiredDate   time.Time `json:"requiredDate"`
+	ShippedDate    time.Time `json:"shippedDate"`
+	Status         string    `json:"status"`
+	Comments       string    `json:"comments"`
+	CustomerNumber int       `json:"customerNumber"`
 }
 
 func (repository *Repository) GetAllCustomers() ([]Customer, error) {
@@ -80,7 +91,52 @@ func (repository *Repository) GetAllCustomers() ([]Customer, error) {
 	return customersList, nil
 }
 
-func (repository *Repository) GetOrderByCustomer() ([]Customer, error) {
+func (repository *Repository) GetCustomer(id int64) (*Customer, error) {
+
+	sqlStmt := "SELECT customerNumber, customerName, contactLastName, contactFirstName, phone, addressLine1, addressLine2, city, state, postalCode, country, salesRepEmployeeNumber, creditLimit FROM customers WHERE customerNumber = ?"
+	var (
+		customerNumber         int
+		customerName           string
+		contactLastName        sql.NullString
+		contactFirstName       sql.NullString
+		phone                  sql.NullString
+		addressLine1           sql.NullString
+		addressLine2           sql.NullString
+		city                   sql.NullString
+		state                  sql.NullString
+		postalCode             sql.NullString
+		country                sql.NullString
+		salesRepEmployeeNumber sql.NullInt64
+		creditLimit            sql.NullFloat64
+	)
+	stmt, err := repository.Conn.Prepare(sqlStmt)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer stmt.Close()
+	err = stmt.QueryRow(id).Scan(&customerNumber, &customerName, &contactLastName, &contactFirstName, &phone, &addressLine1, &addressLine2, &city, &state, &postalCode, &country, &salesRepEmployeeNumber, &creditLimit)
+	if err != nil {
+		log.Fatal(err)
+	}
+	customer := Customer{
+		CustomerNumber:         customerNumber,
+		CustomerName:           customerName,
+		ContactLastName:        contactLastName.String,
+		ContactFirstName:       contactFirstName.String,
+		Phone:                  phone.String,
+		AddressLine1:           addressLine1.String,
+		AddressLine2:           addressLine2.String,
+		City:                   city.String,
+		State:                  state.String,
+		PostalCode:             postalCode.String,
+		Country:                country.String,
+		SalesRepEmployeeNumber: salesRepEmployeeNumber.Int64,
+		CreditLimit:            creditLimit.Float64,
+	}
+	return &customer, nil
+}
+
+/*func (repository *Repository) GetOrderByCustomer(id int64) ([]Customer, error) {
 	rows, _ := repository.Conn.Query("SELECT customerNumber, customerName, contactLastName, contactFirstName, phone, addressLine1, addressLine2, city, state, postalCode, country, salesRepEmployeeNumber, creditLimit FROM customers")
 
 	var (
@@ -133,3 +189,4 @@ func (repository *Repository) GetOrderByCustomer() ([]Customer, error) {
 	}
 	return customersList, nil
 }
+*/
