@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"goevent/database"
 	"goevent/database/Models"
@@ -21,9 +22,10 @@ func CustomerAction(c *gin.Context) {
 	c.JSON(http.StatusOK, customer)
 }
 
-/*func OrderByCustomer(c *gin.Context) {
+func OrderByCustomer(c *gin.Context) {
 	repository := Models.Repository{Conn: database.DbConn}
 	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
-	customerOrder, _ := repository.GetOrderByCustomer(id)
-	c.JSON(http.StatusOK, "order")
-}*/
+	orderSummary, _ := repository.GetOrderByCustomer(id)
+	fmt.Print(orderSummary)
+	c.JSON(http.StatusOK, orderSummary)
+}

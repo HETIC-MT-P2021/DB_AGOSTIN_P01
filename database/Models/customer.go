@@ -28,18 +28,31 @@ type Customer struct {
 }
 
 type Order struct {
-	OrderNumber    int       `json:"orderNumber"`
-	OrderDate      time.Time `json:"orderDate"`
-	RequiredDate   time.Time `json:"requiredDate"`
-	ShippedDate    time.Time `json:"shippedDate"`
-	Status         string    `json:"status"`
-	Comments       string    `json:"comments"`
-	CustomerNumber int       `json:"customerNumber"`
+	OrderNumber    uint           `json:"orderNumber"`
+	OrderDate      time.Time      `json:"orderDate"`
+	RequiredDate   time.Time      `json:"requiredDate"`
+	ShippedDate    time.Time      `json:"shippedDate"`
+	Status         string         `json:"status"`
+	Comments       sql.NullString `json:"comments"`
+	CustomerNumber uint           `json:"customerNumber"`
+	Details        []OrderDetails `json:"details"`
+}
+type OrderDetails struct {
+	OrderNumber     uint    `json:"orderNumber"`
+	ProductCode     string  `json:"productCode"`
+	QuantityOrdered uint    `json:"quantity"`
+	PriceEach       float64 `json:"price"`
+	OrderLineNumber uint16  `json:"orderLineNumber"`
+}
+
+type OrderSummary struct {
+	TotalPrice float64 `json:"totalPrice"`
+	TotalItems int16   `json:"totalItems"`
+	Order      []Order `json:"orders"`
 }
 
 func (repository *Repository) GetAllCustomers() ([]Customer, error) {
 	rows, _ := repository.Conn.Query("SELECT customerNumber, customerName, contactLastName, contactFirstName, phone, addressLine1, addressLine2, city, state, postalCode, country, salesRepEmployeeNumber, creditLimit FROM customers")
-
 	var (
 		customerNumber         int
 		customerName           string
@@ -60,10 +73,6 @@ func (repository *Repository) GetAllCustomers() ([]Customer, error) {
 
 	defer rows.Close()
 	for rows.Next() {
-		err := rows.Scan(&customerNumber, &customerName, &contactLastName, &contactFirstName, &phone, &addressLine1, &addressLine2, &city, &state, &postalCode, &country, &salesRepEmployeeNumber, &creditLimit)
-		if err != nil {
-			log.Fatal(err)
-		}
 		switch err := rows.Scan(&customerNumber, &customerName, &contactLastName, &contactFirstName, &phone, &addressLine1, &addressLine2, &city, &state, &postalCode, &country, &salesRepEmployeeNumber, &creditLimit); err {
 		case sql.ErrNoRows:
 			return nil, err
@@ -136,57 +145,110 @@ func (repository *Repository) GetCustomer(id int64) (*Customer, error) {
 	return &customer, nil
 }
 
-/*func (repository *Repository) GetOrderByCustomer(id int64) ([]Customer, error) {
-	rows, _ := repository.Conn.Query("SELECT customerNumber, customerName, contactLastName, contactFirstName, phone, addressLine1, addressLine2, city, state, postalCode, country, salesRepEmployeeNumber, creditLimit FROM customers")
+func (repository *Repository) getTotalPriceOrder(id int64) (float64, error) {
+	var totalPrice float64
+	sqlStmt := "SELECT SUM(priceEach) as totalPrice FROM orders INNER JOIN orderdetails ON orders.orderNumber = orderdetails.orderNumber WHERE customerNumber = ?"
+	err := repository.Conn.QueryRow(sqlStmt, id).Scan(&totalPrice)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return totalPrice, nil
+}
 
+func (repository *Repository) getTotalItemsOrder(id int64) (int16, error) {
+	var totalItems int16
+	sqlStmt := "SELECT COUNT(priceEach) as totalItems FROM orders INNER JOIN orderdetails ON orders.orderNumber = orderdetails.orderNumber WHERE customerNumber = ?"
+	err := repository.Conn.QueryRow(sqlStmt, id).Scan(&totalItems)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return totalItems, nil
+}
+
+func (repository *Repository) getAllOrder(id int64) (int16, error) {
+	var totalItems int16
+	sqlStmt := "SELECT COUNT(priceEach) as totalItems FROM orders INNER JOIN orderdetails ON orders.orderNumber = orderdetails.orderNumber WHERE customerNumber = ?"
+	err := repository.Conn.QueryRow(sqlStmt, id).Scan(&totalItems)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return totalItems, nil
+}
+
+func (repository *Repository) getOrderDetails(id uint) ([]OrderDetails, error) {
+	sqlStmtOrder := "SELECT orderNumber, productCode, quantityOrdered, priceEach, orderLineNumber FROM orderdetails WHERE orderNumber = ?"
+	rows, _ := repository.Conn.Query(sqlStmtOrder, id)
 	var (
-		customerNumber         int
-		customerName           string
-		contactLastName        sql.NullString
-		contactFirstName       sql.NullString
-		phone                  sql.NullString
-		addressLine1           sql.NullString
-		addressLine2           sql.NullString
-		city                   sql.NullString
-		state                  sql.NullString
-		postalCode             sql.NullString
-		country                sql.NullString
-		salesRepEmployeeNumber sql.NullInt64
-		creditLimit            sql.NullFloat64
+		OrderNumber     uint
+		ProductCode     string
+		QuantityOrdered uint
+		PriceEach       float64
+		OrderLineNumber uint16
 	)
 
-	var customersList []Customer
+	orderDetails := make([]OrderDetails, 0)
 
 	defer rows.Close()
 	for rows.Next() {
-		err := rows.Scan(&customerNumber, &customerName, &contactLastName, &contactFirstName, &phone, &addressLine1, &addressLine2, &city, &state, &postalCode, &country, &salesRepEmployeeNumber, &creditLimit)
-		if err != nil {
-			log.Fatal(err)
-		}
-		switch err := rows.Scan(&customerNumber, &customerName, &contactLastName, &contactFirstName, &phone, &addressLine1, &addressLine2, &city, &state, &postalCode, &country, &salesRepEmployeeNumber, &creditLimit); err {
+		switch err := rows.Scan(&OrderNumber, &ProductCode, &QuantityOrdered, &PriceEach, &OrderLineNumber); err {
 		case sql.ErrNoRows:
 			return nil, err
 		case nil:
-			customer := Customer{
-				CustomerNumber:         customerNumber,
-				CustomerName:           customerName,
-				ContactLastName:        contactLastName.String,
-				ContactFirstName:       contactFirstName.String,
-				Phone:                  phone.String,
-				AddressLine1:           addressLine1.String,
-				AddressLine2:           addressLine2.String,
-				City:                   city.String,
-				State:                  state.String,
-				PostalCode:             postalCode.String,
-				Country:                country.String,
-				SalesRepEmployeeNumber: salesRepEmployeeNumber.Int64,
-				CreditLimit:            creditLimit.Float64,
+			details := OrderDetails{
+				OrderNumber:     OrderNumber,
+				ProductCode:     ProductCode,
+				QuantityOrdered: QuantityOrdered,
+				PriceEach:       PriceEach,
+				OrderLineNumber: OrderLineNumber,
 			}
-			customersList = append(customersList, customer)
+			orderDetails = append(orderDetails, details)
 		default:
 			return nil, err
 		}
 	}
-	return customersList, nil
+	return orderDetails, nil
 }
-*/
+
+func (repository *Repository) GetOrderByCustomer(id int64) (*OrderSummary, error) {
+	totalPrice, _ := repository.getTotalPriceOrder(id)
+	totalItems, _ := repository.getTotalItemsOrder(id)
+
+	sqlStmtOrder := "SELECT orderNumber, orderDate, requiredDate, shippedDate, status, comments, customerNumber FROM orders WHERE customerNumber = ?"
+	rows, _ := repository.Conn.Query(sqlStmtOrder, id)
+	var (
+		OrderNumber    uint
+		OrderDate      time.Time
+		RequiredDate   time.Time
+		ShippedDate    time.Time
+		Status         string
+		Comments       sql.NullString
+		CustomerNumber uint
+	)
+
+	orderList := make([]Order, 0)
+
+	defer rows.Close()
+	for rows.Next() {
+		switch err := rows.Scan(&OrderNumber, &OrderDate, &RequiredDate, &ShippedDate, &Status, &Comments, &CustomerNumber); err {
+		case sql.ErrNoRows:
+			return nil, err
+		case nil:
+			orderDetails, _ := repository.getOrderDetails(OrderNumber)
+			order := Order{
+				OrderNumber:    OrderNumber,
+				OrderDate:      OrderDate,
+				RequiredDate:   RequiredDate,
+				ShippedDate:    ShippedDate,
+				Status:         Status,
+				Comments:       Comments,
+				CustomerNumber: CustomerNumber,
+				Details:        orderDetails,
+			}
+			orderList = append(orderList, order)
+		default:
+			return nil, err
+		}
+	}
+	summary := OrderSummary{TotalPrice: totalPrice, TotalItems: totalItems, Order: orderList}
+	return &summary, nil
+}
