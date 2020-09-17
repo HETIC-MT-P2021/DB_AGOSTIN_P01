@@ -1,25 +1,42 @@
 package main
 
 import (
+	"context"
 	"goevent/database"
-	"goevent/router"
+	"goevent/routes"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 )
 
 func main() {
-	port := "8080"
-	newRouter := router.NewRouter()
+	router := routes.SetupRouter()
 
-	err := database.Connect()
-	if err != nil {
-		log.Fatalf("could not connect to db: %v", err)
+	_ = database.Connect()
+
+	srv := &http.Server{
+		Addr:    ":8080",
+		Handler: router,
 	}
 
-	log.Print("\nServer started on port " + port)
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("listen: %s\n", err)
+		}
+	}()
 
-	err = http.ListenAndServe(":"+port, newRouter)
-	if err != nil {
-		log.Fatalf("could not serve on port %s", port)
+	quit := make(chan os.Signal)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	log.Println("Shutting down server...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatal("Server forced to shutdown:", err)
 	}
+	log.Println("Server exiting")
 }
