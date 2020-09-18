@@ -33,16 +33,25 @@ type Order struct {
 	RequiredDate   time.Time      `json:"requiredDate"`
 	ShippedDate    time.Time      `json:"shippedDate"`
 	Status         string         `json:"status"`
-	Comments       sql.NullString `json:"comments"`
+	Comments       string         `json:"comments"`
 	CustomerNumber uint           `json:"customerNumber"`
 	Details        []OrderDetails `json:"details"`
 }
+
 type OrderDetails struct {
-	OrderNumber     uint    `json:"orderNumber"`
-	ProductCode     string  `json:"productCode"`
-	QuantityOrdered uint    `json:"quantity"`
-	PriceEach       float64 `json:"price"`
-	OrderLineNumber uint16  `json:"orderLineNumber"`
+	OrderNumber        uint    `json:"orderNumber"`
+	ProductCode        string  `json:"productCode"`
+	QuantityOrdered    uint    `json:"quantity"`
+	PriceEach          float64 `json:"price"`
+	OrderLineNumber    uint16  `json:"orderLineNumber"`
+	ProductName        string  `json:"productName"`
+	ProductLine        string  `json:"productLine"`
+	ProductScale       string  `json:"productScale"`
+	ProductVendor      string  `json:"productVendor"`
+	ProductDescription string  `json:"productDescription"`
+	QuantityInStock    uint    `json:"stock"`
+	BuyPrice           float64 `json:"buyPrice"`
+	MSRP               float64 `json:"msrp"`
 }
 
 type OrderSummary struct {
@@ -176,30 +185,45 @@ func (repository *Repository) getAllOrder(id int64) (int16, error) {
 }
 
 func (repository *Repository) getOrderDetails(id uint) ([]OrderDetails, error) {
-	sqlStmtOrder := "SELECT orderNumber, productCode, quantityOrdered, priceEach, orderLineNumber FROM orderdetails WHERE orderNumber = ?"
+	sqlStmtOrder := "SELECT orderNumber, products.productCode, quantityOrdered, priceEach, orderLineNumber, productName, productLine, productScale, productVendor, productDescription, quantityInStock, buyPrice, MSRP FROM orderdetails INNER JOIN products ON orderdetails.productCode = products.productCode WHERE orderNumber = ? ORDER BY orderLineNumber ASC"
 	rows, _ := repository.Conn.Query(sqlStmtOrder, id)
 	var (
-		OrderNumber     uint
-		ProductCode     string
-		QuantityOrdered uint
-		PriceEach       float64
-		OrderLineNumber uint16
+		OrderNumber        uint
+		ProductCode        string
+		QuantityOrdered    uint
+		PriceEach          float64
+		OrderLineNumber    uint16
+		productName        string
+		productLine        string
+		productScale       string
+		productVendor      string
+		productDescription string
+		quantityInStock    uint
+		buyPrice           float64
+		MSRP               float64
 	)
 
 	orderDetails := make([]OrderDetails, 0)
 
 	defer rows.Close()
 	for rows.Next() {
-		switch err := rows.Scan(&OrderNumber, &ProductCode, &QuantityOrdered, &PriceEach, &OrderLineNumber); err {
+		switch err := rows.Scan(&OrderNumber, &ProductCode, &QuantityOrdered, &PriceEach, &OrderLineNumber, &productName, &productLine, &productScale, &productVendor, &productDescription, &quantityInStock, &buyPrice, &MSRP); err {
 		case sql.ErrNoRows:
 			return nil, err
 		case nil:
 			details := OrderDetails{
-				OrderNumber:     OrderNumber,
-				ProductCode:     ProductCode,
-				QuantityOrdered: QuantityOrdered,
-				PriceEach:       PriceEach,
-				OrderLineNumber: OrderLineNumber,
+				OrderNumber:        OrderNumber,
+				ProductCode:        ProductCode,
+				QuantityOrdered:    QuantityOrdered,
+				PriceEach:          PriceEach,
+				OrderLineNumber:    OrderLineNumber,
+				ProductName:        productName,
+				ProductLine:        productLine,
+				ProductScale:       productScale,
+				ProductVendor:      productVendor,
+				ProductDescription: productDescription,
+				QuantityInStock:    quantityInStock,
+				MSRP:               MSRP,
 			}
 			orderDetails = append(orderDetails, details)
 		default:
@@ -240,7 +264,7 @@ func (repository *Repository) GetOrderByCustomer(id int64) (*OrderSummary, error
 				RequiredDate:   RequiredDate,
 				ShippedDate:    ShippedDate,
 				Status:         Status,
-				Comments:       Comments,
+				Comments:       Comments.String,
 				CustomerNumber: CustomerNumber,
 				Details:        orderDetails,
 			}
