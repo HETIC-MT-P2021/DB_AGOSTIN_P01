@@ -6,11 +6,6 @@ import (
 	"time"
 )
 
-// Repository struct for db connection
-type Repository struct {
-	Conn *sql.DB
-}
-
 type Customer struct {
 	CustomerNumber         int     `json:"customerNumber"`
 	CustomerName           string  `json:"customerName"`
