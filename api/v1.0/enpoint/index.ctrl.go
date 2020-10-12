@@ -1,4 +1,4 @@
-package controllers
+package endpoint
 
 import (
 	"github.com/gin-gonic/gin"

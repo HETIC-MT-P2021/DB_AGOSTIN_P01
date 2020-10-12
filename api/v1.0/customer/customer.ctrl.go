@@ -1,4 +1,4 @@
-package controllers
+package customer
 
 import (
 	"github.com/gin-gonic/gin"
@@ -8,13 +8,13 @@ import (
 	"strconv"
 )
 
-func AllCustomerAction(c *gin.Context) {
+func AllCustomersAction(c *gin.Context) {
 	repository := Models.Repository{Conn: database.DbConn}
 	customers, _ := repository.GetAllCustomers()
 	c.JSON(http.StatusOK, customers)
 }
 
-func CustomerAction(c *gin.Context) {
+func FindByIdCustomerAction(c *gin.Context) {
 	repository := Models.Repository{Conn: database.DbConn}
 	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 	customer, _ := repository.GetCustomer(id)

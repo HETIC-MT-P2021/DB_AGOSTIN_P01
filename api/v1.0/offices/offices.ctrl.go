@@ -1,4 +1,4 @@
-package controllers
+package offices
 
 import (
 	"github.com/gin-gonic/gin"
