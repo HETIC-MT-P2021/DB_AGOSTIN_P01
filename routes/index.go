@@ -10,6 +10,7 @@ func addIndexRoutes(rg *gin.RouterGroup) {
 	customers := rg.Group("/customers")
 	orders := rg.Group("/orders")
 	employees := rg.Group("/employees")
+	offices := rg.Group("/offices")
 
 	// routes for API endpoint
 	index.GET("/", controllers.IndexAction)
@@ -25,5 +26,9 @@ func addIndexRoutes(rg *gin.RouterGroup) {
 	//routes for employees
 	employees.GET("/", controllers.GetEmployees)
 	employees.GET("/:id", controllers.GetEmployee)
+
+	//routes for offices
+	offices.GET("/", controllers.GetOfficesAction)
+	offices.GET("/:id", controllers.GetOfficeAction)
 
 }

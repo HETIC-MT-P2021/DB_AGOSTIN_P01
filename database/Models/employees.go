@@ -69,6 +69,47 @@ func (repository *Repository) GetAllEmployees() ([]Employees, error) {
 	return employeesList, nil
 }
 
+func (repository *Repository) GetEmployeeByOffice(id uint) ([]Employee, error) {
+	sqlStmt := "SELECT employeeNumber, lastName, firstName, email, jobTitle FROM employees WHERE officeCode = ?"
+	stmt, err := repository.Conn.Prepare(sqlStmt)
+
+	var (
+		EmployeeNumber uint
+		LastName       string
+		FirstName      string
+		Email          string
+		JobTitle       string
+	)
+
+	employeeList := make([]Employee, 0)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer stmt.Close()
+	rows, err := stmt.Query(id)
+	if err != nil {
+		log.Fatal(err)
+	}
+	for rows.Next() {
+		switch err := rows.Scan(&EmployeeNumber, &LastName, &FirstName, &Email, &JobTitle); err {
+		case sql.ErrNoRows:
+			return nil, err
+		case nil:
+			employee := Employee{
+				EmployeeNumber: EmployeeNumber,
+				LastName:       LastName,
+				FirstName:      FirstName,
+				Email:          Email,
+				JobTitle:       JobTitle,
+			}
+			employeeList = append(employeeList, employee)
+		default:
+			return nil, err
+		}
+	}
+	return employeeList, nil
+}
+
 func (repository *Repository) GetEmployeeAction(id uint64) (EmployeeDetails, error) {
 	sqlStmt := "SELECT employeeNumber, lastName, firstName, email, jobTitle, city, phone, addressLine1, addressLine2, state, country, postalCode, territory FROM employees INNER JOIN offices ON employees.officeCode = offices.officeCode WHERE employeeNumber = ?"
 	var (
@@ -95,7 +136,7 @@ func (repository *Repository) GetEmployeeAction(id uint64) (EmployeeDetails, err
 	if err != nil {
 		log.Fatal(err)
 	}
-	customer := EmployeeDetails{
+	employeeDetail := EmployeeDetails{
 		EmployeeNumber: EmployeeNumber,
 		LastName:       LastName,
 		FirstName:      FirstName,
@@ -110,5 +151,5 @@ func (repository *Repository) GetEmployeeAction(id uint64) (EmployeeDetails, err
 		PostalCode:     PostalCode,
 		Territory:      Territory,
 	}
-	return customer, nil
+	return employeeDetail, nil
 }
