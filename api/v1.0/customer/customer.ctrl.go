@@ -4,13 +4,17 @@ import (
 	"github.com/gin-gonic/gin"
 	"goevent/database"
 	"goevent/database/Models"
+	"log"
 	"net/http"
 	"strconv"
 )
 
 func GetAllCustomers(c *gin.Context) {
 	repository := Models.Repository{Conn: database.DbConn}
-	customers, _ := repository.GetAllCustomers()
+	customers, err := repository.GetAllCustomers()
+
+	log.Println(err)
+
 	c.JSON(http.StatusOK, customers)
 }
 

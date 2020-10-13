@@ -55,53 +55,60 @@ type OrderSummary struct {
 	Order      []Order `json:"orders"`
 }
 
-func (repository *Repository) GetAllCustomers() ([]Customer, error) {
-	rows, _ := repository.Conn.Query("SELECT customerNumber, customerName, contactLastName, contactFirstName, phone, addressLine1, addressLine2, city, state, postalCode, country, salesRepEmployeeNumber, creditLimit FROM customers")
-	var (
-		customerNumber         int
-		customerName           string
-		contactLastName        sql.NullString
-		contactFirstName       sql.NullString
-		phone                  sql.NullString
-		addressLine1           sql.NullString
-		addressLine2           sql.NullString
-		city                   sql.NullString
-		state                  sql.NullString
-		postalCode             sql.NullString
-		country                sql.NullString
-		salesRepEmployeeNumber sql.NullInt64
-		creditLimit            sql.NullFloat64
-	)
-
+func (repository *Repository) GetAllCustomers() ([]Customer, ErrSql) {
+	rows, err := repository.Conn.Query("SELECT customerNumber, customerName, contactLastName, contactFirstName, phone, addressLine1, addressLine2, city, state, postalCode, country, salesRepEmployeeNumber, creditLimit FROM customers")
 	var customersList []Customer
 
+	if err != nil {
+		// handle this error better than this
+		panic(err)
+	}
 	defer rows.Close()
 	for rows.Next() {
-		switch err := rows.Scan(&customerNumber, &customerName, &contactLastName, &contactFirstName, &phone, &addressLine1, &addressLine2, &city, &state, &postalCode, &country, &salesRepEmployeeNumber, &creditLimit); err {
-		case sql.ErrNoRows:
-			return nil, err
-		case nil:
-			customer := Customer{
-				CustomerNumber:         customerNumber,
-				CustomerName:           customerName,
-				ContactLastName:        contactLastName.String,
-				ContactFirstName:       contactFirstName.String,
-				Phone:                  phone.String,
-				AddressLine1:           addressLine1.String,
-				AddressLine2:           addressLine2.String,
-				City:                   city.String,
-				State:                  state.String,
-				PostalCode:             postalCode.String,
-				Country:                country.String,
-				SalesRepEmployeeNumber: salesRepEmployeeNumber.Int64,
-				CreditLimit:            creditLimit.Float64,
-			}
-			customersList = append(customersList, customer)
-		default:
-			return nil, err
+		var (
+			customerNumber         int
+			customerName           string
+			contactLastName        sql.NullString
+			contactFirstName       sql.NullString
+			phone                  sql.NullString
+			addressLine1           sql.NullString
+			addressLine2           sql.NullString
+			city                   sql.NullString
+			state                  sql.NullString
+			postalCode             sql.NullString
+			country                sql.NullString
+			salesRepEmployeeNumber sql.NullInt64
+			creditLimit            sql.NullFloat64
+		)
+		err := rows.Scan(&customerNumber, &customerName, &contactLastName, &contactFirstName, &phone, &addressLine1, &addressLine2, &city, &state, &postalCode, &country, &salesRepEmployeeNumber, &creditLimit)
+		customer := Customer{
+			CustomerNumber:         customerNumber,
+			CustomerName:           customerName,
+			ContactLastName:        contactLastName.String,
+			ContactFirstName:       contactFirstName.String,
+			Phone:                  phone.String,
+			AddressLine1:           addressLine1.String,
+			AddressLine2:           addressLine2.String,
+			City:                   city.String,
+			State:                  state.String,
+			PostalCode:             postalCode.String,
+			Country:                country.String,
+			SalesRepEmployeeNumber: salesRepEmployeeNumber.Int64,
+			CreditLimit:            creditLimit.Float64,
 		}
+		customersList = append(customersList, customer)
+		if err != nil {
+			// handle this error
+			panic(err)
+		}
+		return customersList, ErrSql{}
 	}
-	return customersList, nil
+	// get any error encountered during iteration
+	err = rows.Err()
+	if err != nil {
+		panic(err)
+	}
+	return nil, ErrSql{}
 }
 
 func (repository *Repository) GetCustomer(id int64) (*Customer, error) {
