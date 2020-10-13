@@ -9,8 +9,8 @@ func ApplyRoutes(r *gin.RouterGroup) {
 	offices := r.Group("/offices")
 	{
 		//routes for customers
-		offices.GET("/", GetOfficesAction)
-		offices.GET("/:id", GetOfficeAction)
+		offices.GET("/", GetOffices)
+		offices.GET("/:id", GetOffice)
 
 	}
 }
