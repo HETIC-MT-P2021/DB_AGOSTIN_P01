@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-func AllOrderItems(c *gin.Context) {
+func GetAllOrderItems(c *gin.Context) {
 	repository := Models.Repository{Conn: database.DbConn}
 	itemsDetails, _ := repository.GetAllItemsInOrder()
 	c.JSON(http.StatusOK, itemsDetails)

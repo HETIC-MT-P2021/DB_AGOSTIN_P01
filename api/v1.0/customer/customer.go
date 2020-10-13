@@ -9,9 +9,9 @@ func ApplyRoutes(r *gin.RouterGroup) {
 	customers := r.Group("/customer")
 	{
 		//routes for customers
-		customers.GET("/", AllCustomersAction)
-		customers.GET("/:id", FindByIdCustomerAction)
-		customers.GET("/:id/orders", OrderByCustomer)
+		customers.GET("/", GetAllCustomers)
+		customers.GET("/:id", GetCustomerById)
+		customers.GET("/:id/orders", GetOrdersByCustomer)
 
 	}
 }

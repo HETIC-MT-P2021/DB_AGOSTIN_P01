@@ -6,14 +6,16 @@ import (
 	"goevent/api/v1.0/employees"
 	endpoint "goevent/api/v1.0/enpoint"
 	"goevent/api/v1.0/offices"
+	"goevent/api/v1.0/order"
 )
 
 func ApplyRoutes(r *gin.RouterGroup) {
 	v1 := r.Group("/v1")
 	{
 		customer.ApplyRoutes(v1)
-		employees.ApplyRoutes(v1)
 		endpoint.ApplyRoutes(v1)
+		employees.ApplyRoutes(v1)
 		offices.ApplyRoutes(v1)
+		order.ApplyRoutes(v1)
 	}
 }
