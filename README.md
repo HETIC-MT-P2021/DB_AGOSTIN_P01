@@ -91,7 +91,7 @@ GET    /api/v1/offices/:id
 
 ## Contributing
 
-Got **something interesting** you'd like to **share**? Learn about [contributing]().
+Got **something interesting** you'd like to **share**? Learn about [contributing](https://github.com/HETIC-MT-P2021/DB_AGOSTIN_P01/blob/master/contributing.md).
 
 ## Author
 
