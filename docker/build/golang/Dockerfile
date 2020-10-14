@@ -10,9 +10,6 @@ ENV GO111MODULE=on
 RUN apk update && apk upgrade && \
     apk add --no-cache bash git openssh
 
-# Add Maintainer Info
-LABEL maintainer="Thomas Raineau - Hetic"
-
 WORKDIR /go/src/goproject
 COPY go.sum go.mod /go/src/goproject/
 

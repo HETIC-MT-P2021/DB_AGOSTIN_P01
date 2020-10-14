@@ -3,12 +3,12 @@ package order
 import (
 	"github.com/gin-gonic/gin"
 	"goevent/database"
-	"goevent/database/Models"
+	"goevent/database/models"
 	"net/http"
 )
 
 func GetAllOrderItems(c *gin.Context) {
-	repository := Models.Repository{Conn: database.DbConn}
+	repository := models.Repository{Conn: database.DbConn}
 	itemsDetails, _ := repository.GetAllItemsInOrder()
 	c.JSON(http.StatusOK, itemsDetails)
 }
