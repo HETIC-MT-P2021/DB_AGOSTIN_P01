@@ -6,8 +6,3 @@ import "database/sql"
 type Repository struct {
 	Conn *sql.DB
 }
-
-type ErrSql struct {
-	code    uint
-	message string
-}
