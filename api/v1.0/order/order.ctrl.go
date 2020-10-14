@@ -9,6 +9,10 @@ import (
 
 func GetAllOrderItems(c *gin.Context) {
 	repository := models.Repository{Conn: database.DbConn}
-	itemsDetails, _ := repository.GetAllItemsInOrder()
+	itemsDetails, err := repository.GetAllItemsInOrder()
+	if err != nil || len(itemsDetails) <= 0 {
+		c.JSON(http.StatusNotFound, "Couldn't fetch itemsDetails.")
+		return
+	}
 	c.JSON(http.StatusOK, itemsDetails)
 }

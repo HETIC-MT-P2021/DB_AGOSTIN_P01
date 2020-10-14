@@ -2,7 +2,6 @@ package models
 
 import (
 	"database/sql"
-	"log"
 )
 
 type Employees struct {
@@ -83,12 +82,12 @@ func (repository *Repository) GetEmployeeByOffice(id uint) ([]Employee, error) {
 
 	employeeList := make([]Employee, 0)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 	defer stmt.Close()
 	rows, err := stmt.Query(id)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 	for rows.Next() {
 		switch err := rows.Scan(&EmployeeNumber, &LastName, &FirstName, &Email, &JobTitle); err {
@@ -110,7 +109,7 @@ func (repository *Repository) GetEmployeeByOffice(id uint) ([]Employee, error) {
 	return employeeList, nil
 }
 
-func (repository *Repository) GetEmployeeAction(id uint64) (EmployeeDetails, error) {
+func (repository *Repository) GetEmployeeAction(id uint64) (*EmployeeDetails, error) {
 	sqlStmt := "SELECT employeeNumber, lastName, firstName, email, jobTitle, city, phone, addressLine1, addressLine2, state, country, postalCode, territory FROM employees INNER JOIN offices ON employees.officeCode = offices.officeCode WHERE employeeNumber = ?"
 	var (
 		EmployeeNumber uint
@@ -129,12 +128,12 @@ func (repository *Repository) GetEmployeeAction(id uint64) (EmployeeDetails, err
 	)
 	stmt, err := repository.Conn.Prepare(sqlStmt)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 	defer stmt.Close()
 	err = stmt.QueryRow(id).Scan(&EmployeeNumber, &LastName, &FirstName, &Email, &JobTitle, &City, &Phone, &AddressLine1, &AddressLine2, &State, &Country, &PostalCode, &Territory)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 	employeeDetail := EmployeeDetails{
 		EmployeeNumber: EmployeeNumber,
@@ -151,5 +150,5 @@ func (repository *Repository) GetEmployeeAction(id uint64) (EmployeeDetails, err
 		PostalCode:     PostalCode,
 		Territory:      Territory,
 	}
-	return employeeDetail, nil
+	return &employeeDetail, nil
 }
