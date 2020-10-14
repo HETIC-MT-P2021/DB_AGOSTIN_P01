@@ -51,17 +51,16 @@ type OrderDetails struct {
 
 type OrderSummary struct {
 	TotalPrice float64 `json:"totalPrice"`
-	TotalItems int16   `json:"totalItems"`
+	TotalItems int32   `json:"totalItems"`
 	Order      []Order `json:"orders"`
 }
 
-func (repository *Repository) GetAllCustomers() ([]Customer, ErrSql) {
+func (repository *Repository) GetAllCustomers() ([]Customer, error) {
 	rows, err := repository.Conn.Query("SELECT customerNumber, customerName, contactLastName, contactFirstName, phone, addressLine1, addressLine2, city, state, postalCode, country, salesRepEmployeeNumber, creditLimit FROM customers")
 	var customersList []Customer
 
 	if err != nil {
-		// handle this error better than this
-		panic(err)
+		return nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
@@ -98,17 +97,15 @@ func (repository *Repository) GetAllCustomers() ([]Customer, ErrSql) {
 		}
 		customersList = append(customersList, customer)
 		if err != nil {
-			// handle this error
-			panic(err)
+			return nil, err
 		}
-		return customersList, ErrSql{}
+		return customersList, err
 	}
-	// get any error encountered during iteration
 	err = rows.Err()
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	return nil, ErrSql{}
+	return nil, err
 }
 
 func (repository *Repository) GetCustomer(id int64) (*Customer, error) {
@@ -131,12 +128,12 @@ func (repository *Repository) GetCustomer(id int64) (*Customer, error) {
 	)
 	stmt, err := repository.Conn.Prepare(sqlStmt)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 	defer stmt.Close()
 	err = stmt.QueryRow(id).Scan(&customerNumber, &customerName, &contactLastName, &contactFirstName, &phone, &addressLine1, &addressLine2, &city, &state, &postalCode, &country, &salesRepEmployeeNumber, &creditLimit)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 	customer := Customer{
 		CustomerNumber:         customerNumber,
@@ -157,23 +154,23 @@ func (repository *Repository) GetCustomer(id int64) (*Customer, error) {
 }
 
 func (repository *Repository) getTotalPriceOrder(id int64) (float64, error) {
-	var totalPrice float64
+	var totalPrice sql.NullFloat64
 	sqlStmt := "SELECT SUM(priceEach) as totalPrice FROM orders INNER JOIN orderdetails ON orders.orderNumber = orderdetails.orderNumber WHERE customerNumber = ?"
 	err := repository.Conn.QueryRow(sqlStmt, id).Scan(&totalPrice)
 	if err != nil {
 		log.Fatal(err)
 	}
-	return totalPrice, nil
+	return totalPrice.Float64, nil
 }
 
-func (repository *Repository) getTotalItemsOrder(id int64) (int16, error) {
-	var totalItems int16
+func (repository *Repository) getTotalItemsOrder(id int64) (int32, error) {
+	var totalItems sql.NullInt32
 	sqlStmt := "SELECT COUNT(priceEach) as totalItems FROM orders INNER JOIN orderdetails ON orders.orderNumber = orderdetails.orderNumber WHERE customerNumber = ?"
 	err := repository.Conn.QueryRow(sqlStmt, id).Scan(&totalItems)
 	if err != nil {
 		log.Fatal(err)
 	}
-	return totalItems, nil
+	return totalItems.Int32, nil
 }
 
 func (repository *Repository) getAllOrder(id int64) (int16, error) {
