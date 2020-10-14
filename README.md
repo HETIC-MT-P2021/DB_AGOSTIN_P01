@@ -1,6 +1,6 @@
 # Dashboard customer
 
-This project aims to develop a API for a dashboard with #Goland
+This project aims to develop an API for a dashboard with #Goland
 
 ## Usage
 
