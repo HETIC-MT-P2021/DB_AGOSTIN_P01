@@ -233,11 +233,9 @@ func (repository *Repository) getOrderDetails(id uint) ([]OrderDetails, error) {
 }
 
 func (repository *Repository) GetOrderByCustomer(id int64) (*OrderSummary, error) {
-	totalPrice, _ := repository.getTotalPriceOrder(id)
-	totalItems, _ := repository.getTotalItemsOrder(id)
 
 	sqlStmtOrder := "SELECT orderNumber, orderDate, requiredDate, shippedDate, status, comments, customerNumber FROM orders WHERE customerNumber = ?"
-	rows, _ := repository.Conn.Query(sqlStmtOrder, id)
+	rows, err := repository.Conn.Query(sqlStmtOrder, id)
 	var (
 		OrderNumber    uint
 		OrderDate      time.Time
@@ -272,6 +270,11 @@ func (repository *Repository) GetOrderByCustomer(id int64) (*OrderSummary, error
 			return nil, err
 		}
 	}
-	summary := OrderSummary{TotalPrice: totalPrice, TotalItems: totalItems, Order: orderList}
-	return &summary, nil
+	if len(orderList) > 0 {
+		totalPrice, _ := repository.getTotalPriceOrder(id)
+		totalItems, _ := repository.getTotalItemsOrder(id)
+		summary := OrderSummary{TotalPrice: totalPrice, TotalItems: totalItems, Order: orderList}
+		return &summary, nil
+	}
+	return nil, err
 }
