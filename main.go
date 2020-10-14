@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"goevent/api"
 	"goevent/database"
+	"goevent/errors"
 	"log"
 	"net/http"
 	"os"
@@ -14,8 +15,10 @@ import (
 )
 
 func main() {
+	gin.ForceConsoleColor()
 	_ = database.Connect()
 	router := gin.Default()
+	router.Use(errors.HandlerError())
 	api.ApplyRoutes(router)
 
 	srv := &http.Server{

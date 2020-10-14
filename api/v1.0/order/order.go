@@ -7,7 +7,6 @@ import (
 func ApplyRoutes(r *gin.RouterGroup) {
 	orders := r.Group("/orders")
 	{
-		//routes for customers
 		orders.GET("/", GetAllOrderItems)
 	}
 }

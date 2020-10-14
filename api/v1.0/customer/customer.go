@@ -6,7 +6,7 @@ import (
 
 // ApplyRoutes applies router to the gin Engine
 func ApplyRoutes(r *gin.RouterGroup) {
-	customers := r.Group("/customer")
+	customers := r.Group("/customers")
 	{
 		//routes for customers
 		customers.GET("/", GetAllCustomers)

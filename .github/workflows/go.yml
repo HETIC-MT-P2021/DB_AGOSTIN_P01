@@ -1,4 +1,4 @@
-name: Go
+name: Go build && unit tests
 
 on:
   push:
@@ -11,6 +11,8 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    env:
+      GO111MODULE: on
     steps:
 
     - name: Set up Go 1.x
@@ -29,6 +31,9 @@ jobs:
             curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
             dep ensure
         fi
+
+    - name: Format
+      uses: sjkaliski/go-github-actions/fmt@v0.5.0
 
     - name: Build
       run: go build -v .
